@@ -1,8 +1,9 @@
 import random
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QMessageBox
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QMessageBox, QPushButton
 import sys
 
 
@@ -128,6 +129,26 @@ class Game:
             self.put_2_or_4(1)
         return self
 
+    @staticmethod
+    def on_player_state_changed(state):
+        if state == QMediaPlayer.StoppedState:
+            player.play()
+
+
+play = QMediaPlayer()
+play.setMedia(QMediaContent(QUrl.fromLocalFile('sound.mp3')))
+
+meow = QMediaPlayer()
+meow.setMedia(QMediaContent(QUrl.fromLocalFile('meow.mp3')))
+
+kefteme = QMediaPlayer()
+kefteme.setMedia(QMediaContent(QUrl.fromLocalFile('kefteme.mp3')))
+
+player = QMediaPlayer()
+player.setMedia(QMediaContent(QUrl.fromLocalFile('audio.mp3')))
+player.setVolume(5)
+player.stateChanged.connect(Game.on_player_state_changed)
+
 
 class MatrixTable(QWidget):
     def __init__(self, game):
@@ -138,7 +159,15 @@ class MatrixTable(QWidget):
         self.setLayout(self.grid)
         self.fill_table(game.board)
 
+    def show_rules(self):
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle("Правила")
+        msg_box.setText("Конечная цель игры 2048 - получить плитку с числом 2048 на игровом поле. \nНачальный набор игры состоит из двух плиток с числами 2 или 4.\nПравила игры:\nИгровое поле состоит из 4x4 квадратов.\nИгрок может сделать ход, передвигая плитки на поле в одном из четырех направлений: вверх, вниз, влево или вправо.\nЕсли две плитки с одинаковыми числами встречаются в процессе передвижения, они объединяются в одну плитку, сумма чисел на которой равна сумме чисел на двух объединяемых плитках.\nПосле каждого хода на случайном месте на игровом поле появляется новая плитка со значением 2 или 4.\nИгрок проигрывает, если на игровом поле не осталось свободных квадратов, в которые можно поместить новую плитку, либо если он не может сделать ход, который приведет к объединению плиток.Подсказка: старайтесь объединять плитки с более высокими значениями, чтобы освобождать место для новых плиток и продолжать игру. Удачи!")
+        msg_box.exec()
+
     def end_of_the_game(self):
+        kefteme.play()
+
         msg = QMessageBox()
         msg.setWindowTitle("Конец игры")
         msg.setText("Игра окончена")
@@ -178,13 +207,21 @@ class MatrixTable(QWidget):
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Left:
             self.game.slide('left')
+            play.play()
         elif event.key() == Qt.Key_Right:
             self.game.slide('right')
+            play.play()
         elif event.key() == Qt.Key_Up:
             self.game.slide('up')
+            play.play()
         elif event.key() == Qt.Key_Down:
             self.game.slide('down')
+            play.play()
+        elif event.key() == Qt.Key_H:
+            meow.play()
+            self.show_rules()
         elif event.key() == Qt.Key_R:
+            kefteme.play()
             self.game.clear_board()
             self.update_table(self.game.put_2_or_4(2))
             return
@@ -197,4 +234,5 @@ if __name__ == '__main__':
     table = MatrixTable(gme)
     MatrixTable.first_nums(table)
     table.show()
+    player.play()
     sys.exit(app.exec_())
