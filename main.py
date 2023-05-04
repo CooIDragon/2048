@@ -1,5 +1,10 @@
 import random
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QLabel, QMessageBox
+import sys
+
 
 class Game:
     def __init__(self):
@@ -13,12 +18,6 @@ class Game:
                       [0, 0, 0, 0],
                       [0, 0, 0, 0],
                       [0, 0, 0, 0]]
-
-    def print(self):
-        for i in range(4):
-            for j in range(4):
-                print(self.board[i][j], end=" ")
-            print()
 
     @property
     def is_board_full(self):
@@ -130,9 +129,72 @@ class Game:
         return self
 
 
-gme = Game()
-gme.put_2_or_4(2)
-while True:
-    gme.print()
-    line = input()
-    gme.slide(line)
+class MatrixTable(QWidget):
+    def __init__(self, game):
+        super().__init__()
+        self.game = game
+        self.grid = QGridLayout()
+        self.grid.setSpacing(10)
+        self.setLayout(self.grid)
+        self.fill_table(game.board)
+
+    def end_of_the_game(self):
+        msg = QMessageBox()
+        msg.setWindowTitle("Конец игры")
+        msg.setText("Игра окончена")
+        msg.setIcon(QMessageBox.Information)
+
+        msg.addButton(QMessageBox.Ok)
+        msg.addButton(QMessageBox.Reset)
+
+        result = msg.exec_()
+        if result == QMessageBox.Ok:
+            QApplication.quit()
+        else:
+            self.game.clear_board()
+            self.update_table(self.game.put_2_or_4(2))
+
+    def first_nums(self):
+        self.update_table(self.game.put_2_or_4(2))
+
+    def fill_table(self, matrix):
+        for row in range(len(matrix)):
+            for col in range(len(matrix[0])):
+                if matrix[row][col] == 0:
+                    label = QLabel('')
+                else:
+                    label = QLabel(str(matrix[row][col]))
+                label.setMinimumSize(75, 75)
+                label.setStyleSheet(
+                    'QLabel { background-color: #eee; border: 1px solid #ccc; font-size: 24px; font-weight: bold; text-align: center; }')
+                self.grid.addWidget(label, row, col)
+
+    def update_table(self, new_matrix):
+        if self.game.is_game_over():
+            MatrixTable.end_of_the_game(self)
+        self.fill_table(new_matrix)
+        self.update()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Left:
+            self.game.slide('left')
+        elif event.key() == Qt.Key_Right:
+            self.game.slide('right')
+        elif event.key() == Qt.Key_Up:
+            self.game.slide('up')
+        elif event.key() == Qt.Key_Down:
+            self.game.slide('down')
+        elif event.key() == Qt.Key_R:
+            self.game.clear_board()
+            self.update_table(self.game.put_2_or_4(2))
+            return
+        self.update_table(self.game.board)
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    gme = Game()
+    table = MatrixTable(gme)
+    MatrixTable.first_nums(table)
+    table.show()
+    sys.exit(app.exec_())
